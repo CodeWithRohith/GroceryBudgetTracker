@@ -1,217 +1,307 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Grocery Budget Tracker Pro</title>
+  <title>GroceryFlow Luxury Edition</title>
+  
+  <!-- Modern Font: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tesseract.js OCR -->
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <!-- Phosphor Icons for crisp modern UI icons -->
+  <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+          },
           colors: {
-            brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+            surface: {
+              DEFAULT: '#121217',
+              50: '#1a1a22',
+              100: '#23232e',
+              border: '#2a2a38'
+            },
+            accent: {
+              DEFAULT: '#10b981',
+              hover: '#059669',
+              glow: 'rgba(16, 185, 129, 0.25)'
+            }
+          },
+          animation: {
+            'laser': 'scanLaser 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            scanLaser: {
+              '0%': { top: '0%' },
+              '100%': { top: '95%' }
+            }
           }
         }
       }
     }
   </script>
+
+  <style>
+    /* Custom scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0c0c10; }
+    ::-webkit-scrollbar-thumb { background: #23232e; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #323242; }
+  </style>
 </head>
-<body class="bg-slate-100/70 text-slate-900 min-h-screen antialiased selection:bg-brand-500 selection:text-white">
+<body class="bg-[#09090c] text-zinc-100 min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-black relative overflow-x-hidden">
+
+  <!-- Ambient Background Lighting Orbs -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[650px] h-[320px] bg-gradient-to-tr from-emerald-600/15 via-teal-500/10 to-indigo-600/10 blur-[130px] -z-10 pointer-events-none rounded-full"></div>
+
+  <!-- Toast Notification Wrapper -->
+  <div id="toastContainer" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center space-y-2 pointer-events-none w-full max-w-sm px-4"></div>
 
   <!-- Main Container -->
-  <div class="max-w-2xl mx-auto px-4 py-6 sm:py-10 space-y-6">
+  <main class="max-w-xl mx-auto px-4 py-6 sm:py-10 space-y-6">
 
-    <!-- Top Navigation & Data Management -->
+    <!-- Header & Action Tools -->
     <header class="flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white text-xl shadow-lg shadow-brand-500/30">
-          <i class="ph-bold ph-receipt"></i>
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-zinc-950 text-xl font-extrabold shadow-lg shadow-emerald-500/20">
+          <i class="ph-bold ph-receipt-x"></i>
         </div>
         <div>
-          <h1 class="font-bold text-lg leading-tight text-slate-900">GroceryFlow</h1>
-          <p class="text-xs text-slate-500">Local & Private Budgeting</p>
+          <h1 class="font-extrabold text-base tracking-tight text-white flex items-center gap-1.5">
+            GroceryFlow
+            <span class="text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded-md">Pro</span>
+          </h1>
+          <p class="text-[11px] text-zinc-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+            100% On-Device Private
+          </p>
         </div>
       </div>
 
-      <div class="flex items-center space-x-2">
-        <button onclick="exportToCSV()" title="Export CSV" class="p-2 text-slate-600 hover:text-brand-600 hover:bg-white rounded-lg border border-slate-200 transition">
-          <i class="ph-bold ph-download-simple text-base"></i>
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center space-x-2 bg-surface-50 p-1.5 rounded-2xl border border-surface-border">
+        <!-- Import Data -->
+        <label title="Import Backup JSON" class="p-2 text-zinc-400 hover:text-emerald-400 hover:bg-surface-100 rounded-xl cursor-pointer transition active:scale-95">
+          <i class="ph-bold ph-upload-simple text-base"></i>
+          <input type="file" id="importBackupInput" accept=".json" class="hidden" onchange="importFullBackup(event)" />
+        </label>
+        <!-- Full Backup -->
+        <button onclick="exportFullBackup()" title="Download Full Backup (JSON)" class="p-2 text-zinc-400 hover:text-emerald-400 hover:bg-surface-100 rounded-xl transition active:scale-95">
+          <i class="ph-bold ph-floppy-disk text-base"></i>
+        </button>
+        <!-- Export CSV -->
+        <button onclick="exportToCSV()" title="Export CSV Spreadsheet" class="p-2 text-zinc-400 hover:text-emerald-400 hover:bg-surface-100 rounded-xl transition active:scale-95">
+          <i class="ph-bold ph-file-csv text-base"></i>
         </button>
       </div>
     </header>
 
-    <!-- Month Selector Bar -->
-    <div class="bg-white p-2 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
-      <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition">
-        <i class="ph-bold ph-caret-left text-lg"></i>
+    <!-- Month Navigation Bar -->
+    <nav class="bg-surface/80 backdrop-blur-xl p-2 rounded-2xl border border-surface-border flex items-center justify-between shadow-2xl">
+      <button onclick="changeMonth(-1)" class="w-9 h-9 flex items-center justify-center hover:bg-surface-100 rounded-xl text-zinc-400 hover:text-white transition active:scale-95">
+        <i class="ph-bold ph-caret-left text-base"></i>
       </button>
 
       <div class="flex items-center space-x-2">
-        <span id="activeMonthDisplay" class="font-bold text-sm tracking-wide text-slate-800">Month YYYY</span>
-        <button id="todayBtn" onclick="jumpToCurrentMonth()" class="hidden text-[10px] uppercase font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full hover:bg-brand-50 hover:text-brand-600 transition">
+        <span id="activeMonthDisplay" class="font-bold text-sm tracking-wide text-zinc-100">Month YYYY</span>
+        <button id="todayBtn" onclick="jumpToCurrentMonth()" class="hidden text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full hover:bg-emerald-500/20 transition">
           Current
         </button>
       </div>
 
-      <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition">
-        <i class="ph-bold ph-caret-right text-lg"></i>
+      <button onclick="changeMonth(1)" class="w-9 h-9 flex items-center justify-center hover:bg-surface-100 rounded-xl text-zinc-400 hover:text-white transition active:scale-95">
+        <i class="ph-bold ph-caret-right text-base"></i>
       </button>
-    </div>
+    </nav>
 
-    <!-- Budget Dashboard Overview -->
-    <section class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5">
+    <!-- Main Budget Card -->
+    <section class="bg-surface/80 backdrop-blur-xl rounded-3xl p-6 border border-surface-border shadow-2xl space-y-6 relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Total Spent</span>
-          <div class="text-3xl font-extrabold tracking-tight text-slate-900 mt-0.5" id="totalSpentText">$0.00</div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-zinc-400">Total Spent</span>
+          <div class="text-4xl font-extrabold tracking-tight text-white mt-0.5 flex items-baseline gap-1" id="totalSpentText">
+            $0.00
+          </div>
         </div>
 
-        <div class="bg-slate-50 rounded-2xl p-2.5 px-4 border border-slate-200/60 flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
-          <span class="text-xs font-medium text-slate-500">Monthly Target:</span>
-          <div class="flex items-center font-bold text-slate-800">
-            <span class="text-slate-400 mr-1">$</span>
-            <input type="number" id="budgetLimitInput" class="w-20 bg-transparent font-bold focus:outline-none focus:ring-1 focus:ring-brand-500 rounded px-1 text-right" />
+        <div class="bg-surface-50/90 rounded-2xl p-2.5 px-4 border border-surface-border flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-start">
+          <span class="text-xs font-medium text-zinc-400">Monthly Target:</span>
+          <div class="flex items-center font-bold text-white">
+            <span class="text-zinc-500 mr-1">$</span>
+            <input type="number" id="budgetLimitInput" class="w-20 bg-transparent font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded px-1 text-right text-white" />
           </div>
         </div>
       </div>
 
-      <!-- Progress Meter -->
+      <!-- Glowing Segmented Meter -->
       <div class="space-y-2">
-        <div class="flex justify-between items-center text-xs font-medium text-slate-600">
-          <span>Remaining: <strong id="remainingBudgetText" class="text-emerald-600 font-bold">$0.00</strong></span>
-          <span id="budgetPercentageText">0% used</span>
+        <div class="flex justify-between items-center text-xs font-semibold">
+          <span class="text-zinc-400">Remaining: <strong id="remainingBudgetText" class="text-emerald-400 font-bold">$0.00</strong></span>
+          <span id="budgetPercentageText" class="text-zinc-500">0% used</span>
         </div>
-        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5">
-          <div id="progressBar" class="bg-brand-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+        <div class="w-full bg-zinc-800/60 rounded-full h-3 overflow-hidden p-0.5 border border-zinc-800">
+          <div id="progressBar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(16,185,129,0.35)]" style="width: 0%"></div>
         </div>
       </div>
 
-      <!-- KPI Pills: Safe-to-Spend & Receipt Count -->
-      <div class="grid grid-cols-2 gap-3 pt-1">
-        <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-3">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Daily Safe Spend</span>
-          <span id="dailyBurnText" class="text-base font-bold text-slate-700 mt-0.5 block">$0.00 / day</span>
+      <!-- Category Distribution Bar -->
+      <div class="space-y-1.5 pt-1">
+        <div class="flex justify-between text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+          <span>Categories</span>
+          <span id="categoryCount">0 types</span>
         </div>
-        <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-3">
-          <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Receipts Logged</span>
-          <span id="receiptCountText" class="text-base font-bold text-slate-700 mt-0.5 block">0 trips</span>
+        <div id="categorySegmentBar" class="w-full h-1.5 rounded-full bg-zinc-800 overflow-hidden flex">
+          <!-- Dynamically filled with colored segments -->
+        </div>
+      </div>
+
+      <!-- Financial Insights Metrics -->
+      <div class="grid grid-cols-2 gap-3 pt-2">
+        <div class="bg-surface-50/60 border border-surface-border rounded-2xl p-3.5">
+          <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Daily Safe Spend</span>
+          <span id="dailyBurnText" class="text-base font-bold text-zinc-200 mt-1 block">$0.00 / day</span>
+        </div>
+        <div class="bg-surface-50/60 border border-surface-border rounded-2xl p-3.5">
+          <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Trips Logged</span>
+          <span id="receiptCountText" class="text-base font-bold text-zinc-200 mt-1 block">0 trips</span>
         </div>
       </div>
     </section>
 
-    <!-- Scan Receipt Trigger & Quick Add -->
+    <!-- Scan Receipt Trigger Area -->
     <section>
-      <label class="group relative flex items-center justify-between p-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white rounded-2xl shadow-md shadow-brand-500/20 cursor-pointer transition active:scale-[0.99]">
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-xl">
+      <label class="group relative flex items-center justify-between p-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-zinc-950 font-semibold rounded-2xl shadow-xl shadow-emerald-950/40 cursor-pointer transition active:scale-[0.98]">
+        <div class="flex items-center space-x-3.5">
+          <div class="w-11 h-11 rounded-xl bg-zinc-950/20 backdrop-blur-md flex items-center justify-center text-xl text-white">
             <i class="ph-bold ph-camera"></i>
           </div>
           <div>
-            <h4 class="font-semibold text-sm">Scan Grocery Receipt</h4>
-            <p class="text-xs text-indigo-100">Extracts total & auto-categorizes</p>
+            <h4 class="font-extrabold text-sm text-white tracking-tight">Scan Grocery Bill</h4>
+            <p class="text-xs text-emerald-100/80 font-normal">Extract total, merchant & date on-device</p>
           </div>
         </div>
-        <span class="text-xs font-semibold bg-white/20 px-3 py-1.5 rounded-xl group-hover:bg-white/30 transition">Upload</span>
+        <span class="text-xs font-bold bg-zinc-950 text-white px-3.5 py-1.5 rounded-xl border border-white/10 group-hover:scale-105 transition">
+          Snap Photo
+        </span>
         <input type="file" id="imageInput" accept="image/*" capture="environment" class="hidden" />
       </label>
 
-      <!-- Processing State Card -->
-      <div id="scanningStatus" class="hidden mt-3 bg-white border border-brand-200 rounded-2xl p-4 shadow-sm flex items-center space-x-3 animate-pulse">
-        <div class="w-8 h-8 rounded-full border-2 border-brand-600 border-t-transparent animate-spin"></div>
-        <div>
-          <p class="text-xs font-bold text-brand-700">Reading receipt with on-device AI...</p>
-          <p id="scanningProgress" class="text-[11px] text-slate-400">Initializing OCR model...</p>
+      <!-- Holographic Scanning Laser Feedback -->
+      <div id="scanningStatus" class="hidden mt-3 bg-surface border border-emerald-500/30 rounded-2xl p-4 shadow-2xl relative overflow-hidden">
+        <div class="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-laser shadow-[0_0_15px_#10b981]"></div>
+        <div class="flex items-center space-x-3.5 relative z-10">
+          <div class="w-8 h-8 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin"></div>
+          <div>
+            <p class="text-xs font-bold text-emerald-400">Processing receipt neural model...</p>
+            <p id="scanningProgress" class="text-[11px] text-zinc-400">Isolating receipt text and totals...</p>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- Receipts History List -->
-    <section class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+    <!-- Expense History Section -->
+    <section class="bg-surface/80 backdrop-blur-xl rounded-3xl p-6 border border-surface-border shadow-2xl space-y-4">
       <div class="flex justify-between items-center">
-        <h3 class="font-bold text-sm text-slate-800">Monthly History</h3>
-        <button onclick="openManualAddModal()" class="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center space-x-1">
-          <i class="ph-bold ph-plus"></i>
-          <span>Manual Entry</span>
+        <h3 class="font-bold text-sm text-zinc-200 tracking-wide">Monthly History</h3>
+        <button onclick="openManualAddModal()" class="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center space-x-1 transition active:scale-95">
+          <i class="ph-bold ph-plus-circle text-base"></i>
+          <span>Add Manually</span>
         </button>
       </div>
 
-      <ul id="receiptList" class="divide-y divide-slate-100 text-sm">
+      <ul id="receiptList" class="divide-y divide-surface-border text-sm">
         <!-- Rendered items go here -->
       </ul>
     </section>
 
-  </div>
+  </main>
 
-  <!-- Review / Verification Modal -->
-  <div id="reviewModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+  <!-- High-End Review / Verification Modal -->
+  <div id="reviewModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-end sm:items-center justify-center hidden p-0 sm:p-4">
+    <div class="bg-surface border border-surface-border w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-        <h3 class="font-bold text-base text-slate-800">Verify Receipt Data</h3>
-        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+      <div class="flex justify-between items-center border-b border-surface-border pb-3">
+        <div class="flex items-center space-x-2">
+          <div class="w-2 h-2 rounded-full bg-emerald-400"></div>
+          <h3 class="font-extrabold text-sm text-white tracking-wide">Review & Confirm Entry</h3>
+        </div>
+        <button onclick="closeModal()" class="text-zinc-400 hover:text-white text-lg p-1">
           <i class="ph-bold ph-x"></i>
         </button>
       </div>
 
       <!-- Scanned Preview Thumbnail -->
-      <div id="receiptImageThumbnailContainer" class="hidden flex items-center space-x-3 p-2 bg-slate-50 border border-slate-200 rounded-xl">
-        <img id="receiptImageThumbnail" class="w-12 h-12 object-cover rounded-lg border border-slate-200" alt="Scanned Receipt" />
-        <span class="text-xs text-slate-500">Image analyzed on-device</span>
+      <div id="receiptImageThumbnailContainer" class="hidden flex items-center space-x-3 p-2.5 bg-surface-50 border border-surface-border rounded-2xl">
+        <img id="receiptImageThumbnail" class="w-12 h-12 object-cover rounded-xl border border-surface-border" alt="Receipt preview" />
+        <div>
+          <span class="text-xs font-bold text-zinc-200 block">Scanned Image Loaded</span>
+          <span class="text-[11px] text-zinc-400">Check detected numbers below</span>
+        </div>
       </div>
 
-      <form id="receiptForm" class="space-y-3.5">
+      <form id="receiptForm" class="space-y-4">
         <div>
-          <label class="text-xs font-semibold text-slate-500 block mb-1">Store Name</label>
-          <input type="text" id="modalStore" class="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none" placeholder="e.g. Trader Joe's, Costco" required />
+          <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Store / Merchant</label>
+          <input type="text" id="modalStore" class="w-full text-sm bg-surface-50 border border-surface-border rounded-xl p-3 text-white placeholder-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="e.g. Costco, Trader Joe's" required />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-semibold text-slate-500 block mb-1">Total Amount ($)</label>
-            <input type="number" step="0.01" id="modalAmount" class="w-full text-sm font-bold border border-slate-200 rounded-xl p-2.5 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-slate-900" placeholder="0.00" required />
+            <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Amount ($)</label>
+            <input type="number" step="0.01" id="modalAmount" class="w-full text-base font-extrabold bg-surface-50 border border-surface-border rounded-xl p-3 text-emerald-400 placeholder-zinc-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="0.00" required />
           </div>
           <div>
-            <label class="text-xs font-semibold text-slate-500 block mb-1">Date</label>
-            <input type="date" id="modalDate" class="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none text-slate-600" required />
+            <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Date</label>
+            <input type="date" id="modalDate" class="w-full text-sm bg-surface-50 border border-surface-border rounded-xl p-3 text-zinc-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" required />
           </div>
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-slate-500 block mb-1">Category</label>
-          <select id="modalCategory" class="w-full text-sm border border-slate-200 rounded-xl p-2.5 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white">
+          <label class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 block mb-1">Category</label>
+          <select id="modalCategory" class="w-full text-sm bg-surface-50 border border-surface-border rounded-xl p-3 text-zinc-200 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition cursor-pointer">
             <option value="Groceries">🛒 Groceries / General</option>
-            <option value="Produce">🥦 Fresh Produce / Fruits</option>
+            <option value="Produce">🥦 Fresh Produce</option>
             <option value="Meat & Dairy">🥩 Meat & Dairy</option>
-            <option value="Snacks & Drinks">🥤 Snacks & Drinks</option>
-            <option value="Household">🧼 Household / Toiletries</option>
+            <option value="Snacks & Drinks">🥤 Snacks & Beverages</option>
+            <option value="Household">🧼 Household Essentials</option>
           </select>
         </div>
 
         <div class="pt-3 flex space-x-2">
-          <button type="button" onclick="closeModal()" class="w-1/2 py-2.5 text-sm font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition">Discard</button>
-          <button type="submit" class="w-1/2 py-2.5 text-sm font-semibold rounded-xl bg-brand-600 hover:bg-brand-700 text-white shadow-md shadow-brand-500/20 transition">Save to Budget</button>
+          <button type="button" onclick="closeModal()" class="w-1/2 py-3 text-xs font-bold uppercase tracking-wider rounded-xl bg-surface-50 hover:bg-surface-100 text-zinc-300 border border-surface-border transition active:scale-95">
+            Cancel
+          </button>
+          <button type="submit" class="w-1/2 py-3 text-xs font-bold uppercase tracking-wider rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-extrabold shadow-lg shadow-emerald-500/20 transition active:scale-95">
+            Save Record
+          </button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Client Application Logic -->
+  <!-- Application Logic -->
   <script>
-    // --- State Variables ---
+    // --- State ---
     const actualToday = new Date();
-    let viewedDate = new Date(); // Tracks the currently browsed month
-    
-    // Category style mapping
-    const CATEGORY_COLORS = {
-      'Groceries': 'bg-slate-100 text-slate-700',
-      'Produce': 'bg-emerald-50 text-emerald-700',
-      'Meat & Dairy': 'bg-amber-50 text-amber-700',
-      'Snacks & Drinks': 'bg-purple-50 text-purple-700',
-      'Household': 'bg-sky-50 text-sky-700'
+    let viewedDate = new Date();
+
+    const CATEGORY_MAP = {
+      'Groceries': { color: 'bg-zinc-800 text-zinc-300 border-zinc-700', hex: '#71717a', icon: 'ph-shopping-cart' },
+      'Produce': { color: 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60', hex: '#10b981', icon: 'ph-plant' },
+      'Meat & Dairy': { color: 'bg-amber-950/60 text-amber-400 border-amber-800/60', hex: '#f59e0b', icon: 'ph-egg' },
+      'Snacks & Drinks': { color: 'bg-purple-950/60 text-purple-400 border-purple-800/60', hex: '#a855f7', icon: 'ph-coffee' },
+      'Household': { color: 'bg-sky-950/60 text-sky-400 border-sky-800/60', hex: '#0284c7', icon: 'ph-sparkle' }
     };
 
     function getMonthKey(dateObj) {
@@ -222,56 +312,80 @@
       return new Date(year, monthIndex + 1, 0).getDate();
     }
 
-    // --- Smart Budget Retrieval (Rollover Logic) ---
+    // --- Toast Alert Replacements ---
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const icons = {
+        success: 'ph-check-circle text-emerald-400',
+        error: 'ph-warning-circle text-rose-400',
+        info: 'ph-info text-sky-400'
+      };
+
+      toast.className = `flex items-center space-x-2 bg-surface/90 border border-surface-border text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-xl transition-all duration-300 transform -translate-y-2 opacity-0 pointer-events-auto`;
+      toast.innerHTML = `
+        <i class="ph-bold ${icons[type] || icons.info} text-base"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.remove('-translate-y-2', 'opacity-0'), 10);
+      setTimeout(() => {
+        toast.classList.add('-translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // --- Budget Logic (Auto Rollover) ---
     function getBudgetForMonth(monthKey) {
       const explicit = localStorage.getItem(`budget_${monthKey}`);
       if (explicit !== null) return parseFloat(explicit);
 
-      // Rollover: If this month has no budget set, find the most recently set budget
       const keys = Object.keys(localStorage).filter(k => k.startsWith('budget_')).sort().reverse();
       for (const k of keys) {
         if (k < `budget_${monthKey}`) {
-          const inherited = parseFloat(localStorage.getItem(k));
-          if (!isNaN(inherited)) return inherited;
+          const val = parseFloat(localStorage.getItem(k));
+          if (!isNaN(val)) return val;
         }
       }
-      return 500; // Fallback default
+      return 500;
     }
 
-    // --- Render App View ---
+    // --- Main Render Function ---
     function render() {
       const currentKey = getMonthKey(viewedDate);
       const isViewingCurrentMonth = currentKey === getMonthKey(actualToday);
 
-      // Month Title
+      // Month Title & Quick Jump
       document.getElementById('activeMonthDisplay').textContent = viewedDate.toLocaleDateString('default', { month: 'long', year: 'numeric' });
       document.getElementById('todayBtn').classList.toggle('hidden', isViewingCurrentMonth);
 
-      // Load Data
       const budget = getBudgetForMonth(currentKey);
       const receipts = JSON.parse(localStorage.getItem(`receipts_${currentKey}`)) || [];
 
       document.getElementById('budgetLimitInput').value = budget;
 
-      // Stats
       const totalSpent = receipts.reduce((sum, r) => sum + r.amount, 0);
       const remaining = budget - totalSpent;
-      const pct = Math.min((totalSpent / (budget || 1)) * 100, 100);
+      const percentage = Math.min((totalSpent / (budget || 1)) * 100, 100);
 
       document.getElementById('totalSpentText').textContent = `$${totalSpent.toFixed(2)}`;
       document.getElementById('receiptCountText').textContent = `${receipts.length} trip${receipts.length === 1 ? '' : 's'}`;
 
       const remainingEl = document.getElementById('remainingBudgetText');
       remainingEl.textContent = `$${remaining.toFixed(2)}`;
-      remainingEl.className = remaining < 0 ? 'text-red-500 font-bold' : 'text-emerald-600 font-bold';
+      remainingEl.className = remaining < 0 ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold';
 
-      document.getElementById('budgetPercentageText').textContent = `${Math.round(pct)}% of target`;
+      document.getElementById('budgetPercentageText').textContent = `${Math.round(percentage)}% of target`;
 
       const bar = document.getElementById('progressBar');
-      bar.style.width = `${pct}%`;
-      bar.className = remaining < 0 ? 'bg-red-500 h-2 rounded-full transition-all duration-300' : 'bg-brand-600 h-2 rounded-full transition-all duration-300';
+      bar.style.width = `${percentage}%`;
+      bar.className = remaining < 0 
+        ? 'bg-gradient-to-r from-rose-500 to-red-400 h-2 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(244,63,94,0.4)]' 
+        : 'bg-gradient-to-r from-emerald-500 to-teal-400 h-2 rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(16,185,129,0.35)]';
 
-      // Daily Safe-to-Spend Calculation
+      // Daily Safe Spend Calculation
       const dailyBurnEl = document.getElementById('dailyBurnText');
       if (isViewingCurrentMonth) {
         const daysInMonth = getDaysInMonth(viewedDate.getFullYear(), viewedDate.getMonth());
@@ -279,48 +393,84 @@
         const safeDaily = remaining > 0 ? (remaining / daysLeft).toFixed(2) : '0.00';
         dailyBurnEl.textContent = `$${safeDaily} / day`;
       } else {
-        dailyBurnEl.textContent = viewedDate < actualToday ? 'Month Closed' : 'Upcoming';
+        dailyBurnEl.textContent = viewedDate < actualToday ? 'Closed' : 'Upcoming';
       }
 
-      // Receipts List
+      // Build Category Distribution Bar
+      buildCategoryBar(receipts, totalSpent);
+
+      // Render Receipt List
       const listEl = document.getElementById('receiptList');
       listEl.innerHTML = '';
 
       if (receipts.length === 0) {
         listEl.innerHTML = `
-          <li class="py-8 text-center text-slate-400">
-            <i class="ph-bold ph-receipt text-3xl mb-1 block"></i>
-            <span class="text-xs">No receipts registered for this month.</span>
+          <li class="py-12 text-center text-zinc-500">
+            <i class="ph-bold ph-receipt text-4xl mb-2 text-zinc-700 block"></i>
+            <span class="text-xs font-semibold">No receipts recorded for this month yet.</span>
           </li>`;
       } else {
         receipts.slice().reverse().forEach((r, idx) => {
           const actualIndex = receipts.length - 1 - idx;
+          const conf = CATEGORY_MAP[r.category] || CATEGORY_MAP['Groceries'];
           const li = document.createElement('li');
-          li.className = 'py-3.5 flex justify-between items-center group';
+          li.className = 'py-3.5 flex justify-between items-center group transition';
           li.innerHTML = `
-            <div class="flex items-center space-x-3">
-              <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ${CATEGORY_COLORS[r.category] || 'bg-slate-100 text-slate-700'}">
-                ${r.store.charAt(0).toUpperCase()}
+            <div class="flex items-center space-x-3.5">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-base font-bold border ${conf.color}">
+                <i class="ph-bold ${conf.icon}"></i>
               </div>
               <div>
-                <div class="font-semibold text-slate-800 text-sm">${r.store}</div>
-                <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+                <div class="font-bold text-white text-sm tracking-tight">${r.store}</div>
+                <div class="flex items-center space-x-2 text-[11px] text-zinc-400 mt-0.5">
                   <span>${r.date}</span>
                   <span>•</span>
-                  <span class="font-medium">${r.category || 'Groceries'}</span>
+                  <span class="font-medium text-zinc-300">${r.category || 'Groceries'}</span>
                 </div>
               </div>
             </div>
-            <div class="flex items-center space-x-3">
-              <span class="font-bold text-slate-900">$${r.amount.toFixed(2)}</span>
-              <button onclick="deleteReceipt(${actualIndex})" class="opacity-0 group-hover:opacity-100 p-1 text-slate-300 hover:text-red-500 rounded transition" title="Delete">
-                <i class="ph-bold ph-trash"></i>
+            <div class="flex items-center space-x-3.5">
+              <span class="font-extrabold text-white text-sm tracking-tight">$${r.amount.toFixed(2)}</span>
+              <button onclick="deleteReceipt(${actualIndex})" class="opacity-0 group-hover:opacity-100 p-1.5 text-zinc-500 hover:text-rose-400 hover:bg-surface-50 rounded-xl transition" title="Delete">
+                <i class="ph-bold ph-trash text-sm"></i>
               </button>
             </div>
           `;
           listEl.appendChild(li);
         });
       }
+    }
+
+    // --- Dynamic Category Bar ---
+    function buildCategoryBar(receipts, totalSpent) {
+      const bar = document.getElementById('categorySegmentBar');
+      const countEl = document.getElementById('categoryCount');
+      bar.innerHTML = '';
+
+      if (receipts.length === 0 || totalSpent === 0) {
+        bar.innerHTML = '<div class="w-full h-full bg-zinc-800"></div>';
+        countEl.textContent = '0 types';
+        return;
+      }
+
+      const catTotals = {};
+      receipts.forEach(r => {
+        const cat = r.category || 'Groceries';
+        catTotals[cat] = (catTotals[cat] || 0) + r.amount;
+      });
+
+      const types = Object.keys(catTotals);
+      countEl.textContent = `${types.length} type${types.length > 1 ? 's' : ''}`;
+
+      types.forEach(cat => {
+        const widthPct = (catTotals[cat] / totalSpent) * 100;
+        const seg = document.createElement('div');
+        seg.style.width = `${widthPct}%`;
+        seg.style.backgroundColor = (CATEGORY_MAP[cat] || CATEGORY_MAP['Groceries']).hex;
+        seg.className = 'h-full transition-all duration-500';
+        seg.title = `${cat}: $${catTotals[cat].toFixed(2)} (${Math.round(widthPct)}%)`;
+        bar.appendChild(seg);
+      });
     }
 
     // --- Navigation ---
@@ -334,24 +484,26 @@
       render();
     }
 
-    // --- Budget Persistence ---
+    // --- Budget Target Input ---
     document.getElementById('budgetLimitInput').addEventListener('change', (e) => {
       const currentKey = getMonthKey(viewedDate);
       const val = parseFloat(e.target.value) || 0;
       localStorage.setItem(`budget_${currentKey}`, val);
       render();
+      showToast("Monthly target updated", "success");
     });
 
-    // --- Receipt Deletion ---
+    // --- Deletion ---
     window.deleteReceipt = function(idx) {
       const currentKey = getMonthKey(viewedDate);
       const receipts = JSON.parse(localStorage.getItem(`receipts_${currentKey}`)) || [];
       receipts.splice(idx, 1);
       localStorage.setItem(`receipts_${currentKey}`, JSON.stringify(receipts));
       render();
+      showToast("Receipt removed", "info");
     };
 
-    // --- OCR Scanning Workflow ---
+    // --- OCR Scanning Logic ---
     document.getElementById('imageInput').addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -360,15 +512,15 @@
       const scanProgress = document.getElementById('scanningProgress');
       scanStatus.classList.remove('hidden');
 
-      // Create thumbnail preview
       const thumbUrl = URL.createObjectURL(file);
       document.getElementById('receiptImageThumbnail').src = thumbUrl;
       document.getElementById('receiptImageThumbnailContainer').classList.remove('hidden');
 
       try {
+        scanProgress.textContent = "Loading WebAssembly neural worker...";
         const worker = await Tesseract.createWorker('eng');
-        scanProgress.textContent = "Analyzing characters...";
         
+        scanProgress.textContent = "Analyzing characters and numbers...";
         const res = await worker.recognize(file);
         const text = res.data.text;
         await worker.terminate();
@@ -376,7 +528,7 @@
         parseAndOpenModal(text);
       } catch (err) {
         console.error(err);
-        alert('OCR could not read the image. You can still input manually.');
+        showToast("OCR read error. Opening manual entry.", "error");
         openManualAddModal();
       } finally {
         scanStatus.classList.add('hidden');
@@ -384,7 +536,7 @@
       }
     });
 
-    // --- Regex Extraction Engine ---
+    // --- Regex Parser ---
     function parseAndOpenModal(text) {
       const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
 
@@ -420,7 +572,6 @@
         }
       }
 
-      // Populate review modal
       document.getElementById('modalStore').value = detectedStore;
       document.getElementById('modalAmount').value = detectedAmount || '';
       document.getElementById('modalDate').value = detectedDate;
@@ -439,7 +590,7 @@
       document.getElementById('reviewModal').classList.add('hidden');
     }
 
-    // --- Form Save ---
+    // --- Receipt Form Submit ---
     document.getElementById('receiptForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const store = document.getElementById('modalStore').value;
@@ -449,8 +600,7 @@
 
       if (!amount || amount <= 0) return;
 
-      // Ensure receipt is filed under the month matching its receipt date
-      const targetMonthKey = date.slice(0, 7); // e.g. "2026-11"
+      const targetMonthKey = date.slice(0, 7);
       const receipts = JSON.parse(localStorage.getItem(`receipts_${targetMonthKey}`)) || [];
 
       receipts.push({
@@ -463,19 +613,19 @@
 
       localStorage.setItem(`receipts_${targetMonthKey}`, JSON.stringify(receipts));
 
-      // Jump view to the month of the receipt added
       viewedDate = new Date(date + 'T00:00:00');
       closeModal();
       render();
+      showToast(`Added $${amount.toFixed(2)} to ${store}`, "success");
     });
 
-    // --- CSV Export (Privacy-Friendly Backup) ---
+    // --- CSV Export ---
     function exportToCSV() {
       const currentKey = getMonthKey(viewedDate);
       const receipts = JSON.parse(localStorage.getItem(`receipts_${currentKey}`)) || [];
 
       if (receipts.length === 0) {
-        alert("No receipts to export for this month.");
+        showToast("No receipts to export for this month", "error");
         return;
       }
 
@@ -487,9 +637,68 @@
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', `groceries_${currentKey}.csv`);
+      a.href = url;
+      a.download = `groceries_${currentKey}.csv`;
       a.click();
+      URL.revokeObjectURL(url);
+      showToast("CSV file generated", "success");
+    }
+
+    // --- Full JSON Backup ---
+    function exportFullBackup() {
+      const backupData = {
+        appName: "GroceryFlow",
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        data: {}
+      };
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('budget_') || key.startsWith('receipts_')) {
+          backupData.data[key] = localStorage.getItem(key);
+        }
+      }
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const today = new Date().toISOString().split('T')[0];
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `groceryflow_backup_${today}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Full backup downloaded", "success");
+    }
+
+    // --- Full JSON Restore ---
+    function importFullBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+
+          if (!parsed.data || typeof parsed.data !== 'object') {
+            throw new Error("Invalid backup structure.");
+          }
+
+          Object.entries(parsed.data).forEach(([key, value]) => {
+            localStorage.setItem(key, value);
+          });
+
+          render();
+          showToast("All historical data restored!", "success");
+        } catch (err) {
+          console.error(err);
+          showToast("Invalid backup JSON file", "error");
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
     }
 
     // Initialize application
